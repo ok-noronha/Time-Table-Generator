@@ -6,8 +6,8 @@ from psycopg2 import OperationalError, errorcodes, errors
 
 class DataBase:
     def __init__(self, usrid, password):
-        self.usrid = usrid
-        self.password = password
+        self.ids = usrid
+        self.pswd = password
 
     def connect_db(self):
         return psycopg2.connect(
@@ -25,7 +25,7 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"INSERT INTO courses VALUES ( '{code}',{hours},{self.usrid})")
+            cur[0].execute(f"INSERT INTO courses VALUES ( '{code}',{hours},{self.ids})")
             cur[1].commit()
             return True
         except Exception as error:
@@ -37,7 +37,7 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"SELECT * FROM courses WHERE code='{code}' AND usrid={self.usrid};")
+            cur[0].execute(f"SELECT * FROM courses WHERE code='{code}' AND usrid={self.ids};")
             return cur[0].fetchone()
         except Exception as error:
             print ("Oops! An exception has occured:", error)
@@ -45,12 +45,28 @@ class DataBase:
             print("course code not found")
             return None
 
+    def set_password(self,cur=None):
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            cur[0].execute(f"UPDATE authentication SET password={self.pswd} WHERE usrid={self.ids}")
+            cur[1].commit()
+            print("Password updated")
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occured:", error)
+            print ("Exception TYPE:", type(error))
+            print("course not deleted")
+            print("Password not updated")
+            return False
+
+
     def delete_course(self, code, cur=None):
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"DELETE FROM courses WHERE code='{code}'AND usrid={self.usrid};")
-            cur[0].execute(f"DELETE FROM courses_cpy WHERE code='{code}'AND usrid={self.usrid};")
+            cur[0].execute(f"DELETE FROM courses WHERE code='{code}'AND usrid={self.ids};")
+            cur[0].execute(f"DELETE FROM courses_cpy WHERE code='{code}'AND usrid={self.ids};")
             cur[1].commit()
             return True
         except Exception as error:
@@ -80,7 +96,7 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"SELECT * FROM jobs WHERE usrid={self.usrid};")
+            cur[0].execute(f"SELECT * FROM jobs WHERE usrid={self.ids};")
             return cur[0].fetchall()
         except Exception as error:
             print ("Oops! An exception has occured:", error)
@@ -92,15 +108,13 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            print(type(self.usrid))
-            print(self.usrid)
-            ids = self.usrid
-            pswd= self.password
+            print(type(self.ids))
+            print(self.ids)
             cur[0].execute(
-                f"INSERT INTO authentication VALUES ({ids},{pswd});")
-            print(type(self.usrid))
+                f"INSERT INTO authentication VALUES ({self.ids},{self.pswd});")
+            print(type(self.ids))
             cur[0].execute(
-                f"INSERT INTO jobs (hour,usrid) VALUES (11,{self.usrid}),(12,{self.usrid}),(13,{self.usrid}),(14,{self.usrid}),(15,{self.usrid}),(16,{self.usrid}),(17,{self.usrid}),(21,{self.usrid}),(22,{self.usrid}),(23,{self.usrid}),(24,{self.usrid}),(25,{self.usrid}),(26,{self.usrid}),(27,{self.usrid}),(31,{self.usrid}),(32,{self.usrid}),(33,{self.usrid}),(34,{self.usrid}),(35,{self.usrid}),(36,{self.usrid}),(37,{self.usrid}),(41,{self.usrid}),(42,{self.usrid}),(43,{self.usrid}),(44,{self.usrid}),(45,{self.usrid}),(46,{self.usrid}),(47,{self.usrid}),(51,{self.usrid}),(52,{self.usrid}),(53,{self.usrid}),(54,{self.usrid}),(55,{self.usrid}),(56,{self.usrid}),(57,{self.usrid}),(61,{self.usrid}),(62,{self.usrid}),(63,{self.usrid}),(64,{self.usrid});"
+                f"INSERT INTO jobs (hour,usrid) VALUES (11,{self.ids}),(12,{self.ids}),(13,{self.ids}),(14,{self.ids}),(15,{self.ids}),(16,{self.ids}),(17,{self.ids}),(21,{self.ids}),(22,{self.ids}),(23,{self.ids}),(24,{self.ids}),(25,{self.ids}),(26,{self.ids}),(27,{self.ids}),(31,{self.ids}),(32,{self.ids}),(33,{self.ids}),(34,{self.ids}),(35,{self.ids}),(36,{self.ids}),(37,{self.ids}),(41,{self.ids}),(42,{self.ids}),(43,{self.ids}),(44,{self.ids}),(45,{self.ids}),(46,{self.ids}),(47,{self.ids}),(51,{self.ids}),(52,{self.ids}),(53,{self.ids}),(54,{self.ids}),(55,{self.ids}),(56,{self.ids}),(57,{self.ids}),(61,{self.ids}),(62,{self.ids}),(63,{self.ids}),(64,{self.ids});"
             )
             cur[1].commit()
             self.add_course("LUNCH", 5 * 4 * 6)
@@ -116,22 +130,22 @@ class DataBase:
             cur = self.create_cur(self.connect_db())
         try:
             cur[0].execute(
-                f"SELECT usrid FROM authentication WHERE usrid={self.usrid}"
+                f"SELECT usrid FROM authentication WHERE usrid = {self.ids}"
             )
-            return cur[0].fetchone() is None
+            return cur[0].fetchone() is not None
         except Exception as error:
             print ("Oops! An exception has occured:", error)
             print ("Exception TYPE:", type(error))
             return False
-
+    
     def check_password(self, cur=None):
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
             cur[0].execute(
-                f"SELECT password FROM authentication WHERE usrid={self.usrid}"
+                f"SELECT password FROM authentication WHERE usrid={self.ids}"
             )
-            return cur[0].fetchone() == self.password
+            return cur[0].fetchone()[0] == self.pswd
 
         except Exception as error:
             print ("Oops! An exception has occured:", error)

@@ -1,7 +1,9 @@
 from tkinter import *
 from tkinter.ttk import *
-import backend
 from tkinter import messagebox
+import backend
+import auth_win
+
 
 class MainWindow :
     def __init__(self,db,usrid):
@@ -15,7 +17,10 @@ class MainWindow :
         self.root = Tk()
         self.root.minsize(800, 600)
         self.root.title("Time Table Generator")
-        self.root.eval('tk::PlaceWindow . center')
+        #self.root.eval('tk::PlaceWindow . center')
+        self.positionRight = int(self.root.winfo_screenwidth()/2 - 400)
+        self.positionDown = int(self.root.winfo_screenheight()/2 - 300)
+        self.root.geometry("+{}+{}".format(self.positionRight, self.positionDown))
 
         self.main_frame = Frame(self.root)
         self.tt_frame = Frame(self.root)
@@ -56,6 +61,7 @@ class MainWindow :
 
         self.tt_frame.pack(side=BOTTOM, fill=X, expand=1, padx=90)
         self.main_frame.pack(side=TOP, fill=BOTH, expand=1)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
 
 
@@ -99,6 +105,11 @@ class MainWindow :
                 self.add_label(code)
             else:
                 self.warning_label["text"] = "* Course Already Exists *"
+
+    def on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.root.destroy()
+            auth_win.Authentication()
 
     def get_day(self,i):
         return "Sunday" if i == 0 else "Monday" if i==1 else "Tuesday" if i==2 else "Wednesday" if i==3 else "Thursday" if i==4 else "Friday" if i==5 else "Saturday"

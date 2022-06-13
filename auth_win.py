@@ -25,6 +25,12 @@ class Authentication:
         self.password=0
         self.db=None
         self.root = Tk()
+        self.root.title("Authentication")
+        self.windowWidth = self.root.winfo_reqwidth()
+        self.windowHeight = self.root.winfo_reqheight()
+        self.positionRight = int(self.root.winfo_screenwidth()/2 - self.windowWidth)
+        self.positionDown = int(self.root.winfo_screenheight()/2 - self.windowHeight)
+        self.root.geometry("+{}+{}".format(self.positionRight, self.positionDown))
         self.id_entry_label = Label(self.root, text="User ID:")
         self.id_entry_label.grid(row=0, column=1, pady=5)
         self.id_entry = Entry(self.root, width=20)
@@ -33,15 +39,19 @@ class Authentication:
         self.password_entry_label.grid(row=2, column=1, pady=5)
         self.password_entry = Entry(self.root, width=20)
         self.password_entry.grid(row=3, column=1, padx=5)
+        Label(self.root, text="  ").grid(row=4, column=1, pady=5)
         self.loginb = Button(text='Login',command=self.on_loginb)
-        self.loginb.grid(row=4,column=2)
+        self.loginb.grid(row=5,column=2)
         self.signupb = Button(text='Sign Up',command=self.on_signupb)
-        self.signupb.grid(row=4,column=0)
+        self.signupb.grid(row=5,column=0)
+        self.forgotb = Button(self.root,text="Forgot Password?",command=self.on_forgotb)
+        self.forgotb.grid(row=5,column=1)
+        self.root.resizable(False,False)
         self.root.mainloop()
 
     def on_loginb(self):
-        self.usrid=Hash(self.id_entry.get())
-        self.password=Hash(self.id_entry.get())
+        self.usrid=Hash(self.id_entry.get()).hash_value
+        self.password=Hash(self.password_entry.get()).hash_value
         self.db = backend.DataBase(self.usrid,self.password)
         if(self.db.check_id()):
             if(self.db.check_password()):
@@ -55,25 +65,28 @@ class Authentication:
 
     def on_signupb(self):
         self.usrid=Hash(self.id_entry.get()).hash_value
-        self.password=Hash(self.id_entry.get()).hash_value
+        self.password=Hash(self.password_entry.get()).hash_value
         self.db = backend.DataBase(self.usrid,self.password)
         if(not self.db.check_id()):
-            if(self.check()):
+            if(self.validate()):
                 self.db = backend.DataBase(self.usrid,self.password)
                 self.db.create_user()
             else:
                 messagebox.showerror("Authentication failed", "Enter a valid user ID.")
         else:
-            messagebox.showerror("Authentication failed", "User ID already exists.")
+            messagebox.showerror("Authentication failed", "User ID already exists.\n Try Logging in.")
 
-    def check(self):
+    def validate(self):
         return True
 
-
-
-
-
-
+    def on_forgotb(self):
+        self.usrid=Hash(self.id_entry.get()).hash_value
+        self.password=Hash(self.password_entry.get()).hash_value
+        self.db = backend.DataBase(self.usrid,self.password)
+        if(self.db.check_id()):
+            self.db.set_password()
+        else:
+            messagebox.showerror("Authentication failed", "User with Entered user ID not Found.")
 
 if __name__ == '__main__':
     Authentication()
