@@ -32,9 +32,13 @@ class MainWindow :
         self.panel3 = PanedWindow(self.main_frame, orient=HORIZONTAL)
         self.panel3.pack(side=TOP, expand=1)
 
-        self.warning_label = Label(self.panel1, text="*                               *")
+        self.warning_label = Label(self.panel1, text="*\t\t\t\t\t\t\t\t\t\t\t\t\t\t*")
         self.warning_label.pack()
         self.panel1.add(self.warning_label)
+
+        self.deleteb = Button(self.panel1, text="Delete Account", command=self.on_delete)
+        self.deleteb.pack(side=RIGHT,padx=35)
+        self.panel1.add(self.deleteb)
 
         self.code_entry_label = Label(self.panel3, text="Course Code :")
         self.code_entry_label.grid(row=0, column=0, padx=5)
@@ -52,9 +56,12 @@ class MainWindow :
         self.acb = Button(self.panel3, text="Add Course", command=self.on_add_course)
         self.acb.grid(row=1, column=4, padx=20)
         self.panel3.add(self.acb)
-        self.el = Label(self.panel3, text="")
+        self.el = Label(self.panel3, text=" ")
         self.el.grid(row=2, column=4, padx=20)
         self.panel3.add(self.el)
+        self.rb = Button(self.panel3, text="Refresh", command=self.update_labels)
+        self.rb.grid(row=3, column=4, padx=20)
+        self.panel3.add(self.rb)
         self.sb = Button(self.panel3, text="Submit", command=self.on_submit)
         self.sb.grid(row=3, column=4, padx=20)
         self.panel3.add(self.sb)
@@ -62,8 +69,8 @@ class MainWindow :
         self.tt_frame.pack(side=BOTTOM, fill=X, expand=1, padx=90)
         self.main_frame.pack(side=TOP, fill=BOTH, expand=1)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.update_labels()
         self.root.mainloop()
-
 
 
     def on_x(self,button):
@@ -73,38 +80,54 @@ class MainWindow :
             del self.code_labels[button]
 
 
-    def add_label(self, str):
-        panel = PanedWindow(self.panel2, orient=HORIZONTAL)
-        lbl = Label(panel, text=str)
-        lbl.grid(row=self.job_count*10, column=0)
-        panel.add(lbl)
-        btn = Button(panel, text="X")
-        btn.config(command=lambda button=btn: self.on_x(button))
-        btn.grid(row=self.job_count*10, column=900)
-        panel.add(btn)
-        self.code_labels[btn] = lbl
-        self.code_panes[btn] = panel
-        panel.pack(side=TOP, expand=1)
-        self.panel2.add(panel)
-        self.job_count += 1
+    def update_labels(self):
+        courses=self.db.get_courses()
+        self.job_count = 0
+        for x in self.code_labels.values():
+            del x
+        for x in self.code_panes.values():
+            x.destroy()
+            del x
+        self.code_panes.clear()
+        self.code_labels.clear()
+        for course in courses:
+            panel = PanedWindow(self.panel2, orient=HORIZONTAL)
+            lbl = Label(panel, text=course[0])
+            lbl.grid(row=self.job_count*10, column=0)
+            panel.add(lbl)
+            btn = Button(panel, text="X")
+            btn.config(command=lambda button=btn: self.on_x(button))
+            btn.grid(row=self.job_count*10, column=900)
+            panel.add(btn)
+            self.code_labels[btn] = lbl
+            self.code_panes[btn] = panel
+            panel.pack(side=TOP, expand=1)
+            self.panel2.add(panel)
+            self.job_count += 1
+
+    def on_delete(self):
+        self.db.delete_user()
+        self.root.destroy()
 
     def on_add_course(self):
         code = self.code_entry.get()
         hours = self.hours_entry.get()
         if code == "" or len(code) > 8:
-            self.warning_label["text"] = "* Please Enter valid the Course Code *"
+            self.warning_label["text"] = "\t\t\t\t\t\t\t*\tPlease Enter valid the Course Code\t*\t\t\t\t\t\t\t"
             self.code_entry.delete(8, END)
             return
         if hours == "" or (not hours.isdigit()):
-            self.warning_label["text"] = "* Please Enter the Minimum Hours Required (integer) *"
+            t="\t\t\\t\t\t\t\t*\tPlease Enter the Minimum Hours Required (integer)\t*\t\t\t\t\t\t\t"
+            self.warning_label["text"] = t
             self.hours_entry.delete(0, END)
 
         else:
-            self.warning_label["text"] = "*                               *"
+            self.warning_label["text"] = "*\t\t\t\t\t\t\t\t\t\t\t\t\t\t*"
             if self.db.add_course(code, hours):
-                self.add_label(code)
+                print()
             else:
                 self.warning_label["text"] = "* Course Already Exists *"
+        self.update_labels()
 
     def on_closing(self):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
@@ -128,12 +151,21 @@ class MainWindow :
             code = job[1] if job[1] != None else "None"
             self.tt[int(job[0]/10)][int(job[0]%10)]["text"]=code
 
-    def on_reset(self):
-        self.db.reset_db()
+        Button(self.tt_frame,text="Reset Data",command=self.on_reset_data).grid(row=10*300, column=10*200,columnspan=6,rowspan=4,padx=15,pady=5)
 
     def on_submit(self):
         self.db.time_table()
         self.jobs = self.db.get_jobs()
+        self.clear_tt()
         self.gen_tt(self.jobs)
         self.tt_frame.tkraise(aboveThis=self.main_frame)
         return
+
+    def clear_tt(self):
+        for r in self.tt:
+            for c in r:
+                c["text"]=" "
+
+    def on_reset_data(self):
+        self.db.create_user()
+        self.update_labels()

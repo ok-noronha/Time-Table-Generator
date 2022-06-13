@@ -33,12 +33,12 @@ class DataBase:
             print ("Exception TYPE:", type(error))
             return False
 
-    def get_courses(self, code, cur=None):
+    def get_courses(self, cur=None):
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"SELECT * FROM courses WHERE code='{code}' AND usrid={self.ids};")
-            return cur[0].fetchone()
+            cur[0].execute(f"SELECT * FROM courses WHERE usrid={self.ids};")
+            return cur[0].fetchall()
         except Exception as error:
             print ("Oops! An exception has occured:", error)
             print ("Exception TYPE:", type(error))
@@ -65,8 +65,8 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"DELETE FROM courses WHERE code='{code}'AND usrid={self.ids};")
             cur[0].execute(f"DELETE FROM courses_cpy WHERE code='{code}'AND usrid={self.ids};")
+            cur[0].execute(f"DELETE FROM courses WHERE code='{code}'AND usrid={self.ids};")
             cur[1].commit()
             return True
         except Exception as error:
@@ -108,11 +108,12 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            print(type(self.ids))
-            print(self.ids)
+            cur[0].execute(f"DELETE FROM jobs WHERE usrid={self.ids};")
+            cur[0].execute(f"DELETE FROM courses_cpy WHERE usrid={self.ids};")
+            cur[0].execute(f"DELETE FROM courses WHERE usrid={self.ids};")
+            cur[0].execute(f"DELETE FROM authentication WHERE usrid={self.ids};")
             cur[0].execute(
                 f"INSERT INTO authentication VALUES ({self.ids},{self.pswd});")
-            print(type(self.ids))
             cur[0].execute(
                 f"INSERT INTO jobs (hour,usrid) VALUES (11,{self.ids}),(12,{self.ids}),(13,{self.ids}),(14,{self.ids}),(15,{self.ids}),(16,{self.ids}),(17,{self.ids}),(21,{self.ids}),(22,{self.ids}),(23,{self.ids}),(24,{self.ids}),(25,{self.ids}),(26,{self.ids}),(27,{self.ids}),(31,{self.ids}),(32,{self.ids}),(33,{self.ids}),(34,{self.ids}),(35,{self.ids}),(36,{self.ids}),(37,{self.ids}),(41,{self.ids}),(42,{self.ids}),(43,{self.ids}),(44,{self.ids}),(45,{self.ids}),(46,{self.ids}),(47,{self.ids}),(51,{self.ids}),(52,{self.ids}),(53,{self.ids}),(54,{self.ids}),(55,{self.ids}),(56,{self.ids}),(57,{self.ids}),(61,{self.ids}),(62,{self.ids}),(63,{self.ids}),(64,{self.ids});"
             )
@@ -137,7 +138,20 @@ class DataBase:
             print ("Oops! An exception has occured:", error)
             print ("Exception TYPE:", type(error))
             return False
-    
+
+    def delete_user(self, cur=None):
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            cur[0].execute(
+                f"DELETE FROM authentication WHERE usrid={self.ids}"
+            )
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occured:", error)
+            print ("Exception TYPE:", type(error))
+            return False
+
     def check_password(self, cur=None):
         if cur is None:
             cur = self.create_cur(self.connect_db())
@@ -152,7 +166,7 @@ class DataBase:
             print ("Exception TYPE:", type(error))
             return False
 
-    def reset_db(self, cur=None):
+    def reset_dib(self, cur=None):
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
@@ -164,13 +178,13 @@ class DataBase:
                 "CREATE TABLE authentication (usrid NUMERIC(12) NOT NULL PRIMARY KEY, password NUMERIC(12) NOT NULL)"
             )
             cur[0].execute(
-                "CREATE TABLE courses (code VARCHAR(8) NOT NULL PRIMARY KEY, hours INTEGER NOT NULL,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid))"
+                "CREATE TABLE courses (code VARCHAR(8) NOT NULL PRIMARY KEY, hours INTEGER NOT NULL,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
             )
             cur[0].execute(
-                "CREATE TABLE courses_cpy (code VARCHAR(8) NOT NULL PRIMARY KEY REFERENCES courses(code), hours INTEGER NOT NULL, usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid))"
+                "CREATE TABLE courses_cpy (code VARCHAR(8) NOT NULL PRIMARY KEY REFERENCES courses(code), hours INTEGER NOT NULL, usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
             )
             cur[0].execute(
-                "CREATE TABLE jobs (hour NUMERIC(2) NOT NULL PRIMARY KEY, code VARCHAR(8) REFERENCES courses(code),usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid))"
+                "CREATE TABLE jobs (hour NUMERIC(2) NOT NULL PRIMARY KEY, code VARCHAR(8) REFERENCES courses(code) ON DELETE CASCADE,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
             )
             cur[0].execute(
                 """CREATE OR REPLACE FUNCTION byfor()
@@ -212,3 +226,8 @@ class DataBase:
             print ("Exception TYPE:", type(error))
             print("The DataBase Couldnt be Reset")
             return False
+
+def reset_db():
+    DataBase(0,0).reset_dib()
+
+print(DataBase(0,0).get_courses())
