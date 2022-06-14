@@ -85,6 +85,34 @@ class DataBase:
             WHERE hour=15 OR hour=25 OR hour=35 OR hour=45 OR hour=55"""
             )
             cur[1].commit()
+            cur[0].execute(f"SELECT hour FROM jobs WHERE code IS NULL AND usrid={self.ids};")
+            jobs=cur[0].fetchall()
+            for job in jobs:
+                cod=None
+                if (job[0]%10 == 1):
+                    try:
+                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') AND hours>0 ORDER BY random() LIMIT 1")
+                        cod = cur[0].fetchone()[0]
+                        if cod is None:
+                            raise Exception("No Mandatory Courses")
+                    except Exception as e:
+                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') ORDER BY random() LIMIT 1")
+                        cod = cur[0].fetchone()[0]
+                else :
+                    try:
+                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} AND hours>0 ORDER BY random() LIMIT 1")
+                        cod = cur[0].fetchone()[0]
+                        if cod is None:
+                            raise Exception("No Mandatory Courses")
+                    except Exception as e:
+                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} ORDER BY random() LIMIT 1")
+                        cod = cur[0].fetchone()[0]
+                cur[0].execute(
+                    f"""UPDATE jobs
+                SET code = '{cod}'
+                WHERE hour={job[0]}"""
+                )
+                cur[1].commit()
             return True
         except Exception as error:
             print ("Oops! An exception has occured:", error)
@@ -201,7 +229,7 @@ class DataBase:
             CREATE OR REPLACE TRIGGER byfor AFTER INSERT ON courses FOR EACH ROW EXECUTE PROCEDURE byfor();"""
             )
             cur[0].execute(
-                """CREATE OR REPLACE FUNCTION decl()
+                f"""CREATE OR REPLACE FUNCTION decl()
             RETURNS trigger as $decl$
             declare
             hrs integer;
@@ -210,14 +238,13 @@ class DataBase:
             hrs=hrs-1;
             UPDATE courses_cpy
             SET hours = hrs
-            WHERE code = new.code;
+            WHERE code = new.code AND usrid = {self.ids};
             RETURN NEW;
             END;
             $decl$
             LANGUAGE plpgsql;
             CREATE OR REPLACE TRIGGER decl AFTER UPDATE ON jobs FOR EACH ROW EXECUTE PROCEDURE decl();"""
             )
-
             cur[1].commit()
 
             return True
@@ -230,4 +257,4 @@ class DataBase:
 def reset_db():
     DataBase(0,0).reset_dib()
 
-print(DataBase(0,0).get_courses())
+print(DataBase(0,0).time_table())

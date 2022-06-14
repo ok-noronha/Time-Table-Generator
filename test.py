@@ -1,4 +1,4 @@
-SELECT code FROM courses_cpy WHERE usrid=0 AND code NOT IN ('LUNCH','MEET','FREE') AND hours>0 ORDER BY random()+dest col LIMIT 1
+SELECT code FROM courses_cpy WHERE usrid=self.ids AND code NOT IN ('LUNCH','MEET','FREE') AND hours>0 ORDER BY random() LIMIT 1
 
 SELECT code FROM courses_cpy WHERE hours>0
 
@@ -38,3 +38,5 @@ $$
 LANGUAGE 'plpgsql';
 
 PERFORM first(0,0);
+
+SELECT hour FROM jobs WHERE code IS NULL AND usrid=self.ids AND hour IN (11,21,31,41,51);

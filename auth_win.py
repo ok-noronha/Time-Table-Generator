@@ -72,7 +72,7 @@ class Authentication:
             if(self.validate()):
                 self.db = backend.DataBase(self.usrid,self.password)
                 self.db.create_user()
-                messagebox.showinfo("Account Created\n Try Logging in.")
+                messagebox.showinfo("Account Created"," Try Logging in.")
             else:
                 messagebox.showerror("Authentication failed", "Enter a valid user ID.")
         else:
