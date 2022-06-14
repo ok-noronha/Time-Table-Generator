@@ -256,5 +256,3 @@ class DataBase:
 
 def reset_db():
     DataBase(0,0).reset_dib()
-
-print(DataBase(0,0).time_table())

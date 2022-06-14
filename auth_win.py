@@ -93,6 +93,3 @@ class Authentication:
             messagebox.showinfo("Password Updated", self.password_entry.get()+" \n Try Logging in.")
         else:
             messagebox.showerror("Authentication failed", "User with Entered user ID not Found.")
-
-if __name__ == '__main__':
-    Authentication()
