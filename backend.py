@@ -12,7 +12,7 @@ class DataBase:
     def connect_db(self):
         return psycopg2.connect(
             user="postgres",
-            password="password",
+            password="1024",
             host="localhost",
             port="5432",
             database="ttdb",
@@ -206,13 +206,13 @@ class DataBase:
                 "CREATE TABLE authentication (usrid NUMERIC(12) NOT NULL PRIMARY KEY, password NUMERIC(12) NOT NULL)"
             )
             cur[0].execute(
-                "CREATE TABLE courses (code VARCHAR(8) NOT NULL PRIMARY KEY, hours INTEGER NOT NULL,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
+                "CREATE TABLE courses (code VARCHAR(8) NOT NULL , hours INTEGER NOT NULL,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
             )
             cur[0].execute(
-                "CREATE TABLE courses_cpy (code VARCHAR(8) NOT NULL PRIMARY KEY REFERENCES courses(code), hours INTEGER NOT NULL, usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
+                "CREATE TABLE courses_cpy (code VARCHAR(8) NOT NULL , hours INTEGER NOT NULL, usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
             )
             cur[0].execute(
-                "CREATE TABLE jobs (hour NUMERIC(2) NOT NULL PRIMARY KEY, code VARCHAR(8) REFERENCES courses(code) ON DELETE CASCADE,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
+                "CREATE TABLE jobs (hour NUMERIC(2) NOT NULL , code VARCHAR(8) ,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
             )
             cur[0].execute(
                 """CREATE OR REPLACE FUNCTION byfor()
