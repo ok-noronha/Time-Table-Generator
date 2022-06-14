@@ -12,7 +12,7 @@ class DataBase:
     def connect_db(self):
         return psycopg2.connect(
             user="postgres",
-            password="1024",
+            password="password",
             host="localhost",
             port="5432",
             database="ttdb",
