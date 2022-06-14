@@ -91,21 +91,21 @@ class DataBase:
                 cod=None
                 if (job[0]%10 == 1):
                     try:
-                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') AND hours>0 ORDER BY random() LIMIT 1")
+                        cur[0].execute(f"SELECT code, hours FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') AND hours>0 ORDER BY random() LIMIT 1")
                         cod = cur[0].fetchone()[0]
                         if cod is None:
                             raise Exception("No Mandatory Courses")
                     except Exception as e:
-                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') ORDER BY random() LIMIT 1")
+                        cur[0].execute(f"SELECT code, hours  FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') ORDER BY random() LIMIT 1")
                         cod = cur[0].fetchone()[0]
                 else :
                     try:
-                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} AND hours>0 ORDER BY random() LIMIT 1")
+                        cur[0].execute(f"SELECT code, hours  FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH') AND hours>0 ORDER BY random() LIMIT 1")
                         cod = cur[0].fetchone()[0]
                         if cod is None:
                             raise Exception("No Mandatory Courses")
                     except Exception as e:
-                        cur[0].execute(f"SELECT code FROM courses_cpy WHERE usrid={self.ids} ORDER BY random() LIMIT 1")
+                        cur[0].execute(f"SELECT code, hours FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH') ORDER BY random() LIMIT 1")
                         cod = cur[0].fetchone()[0]
                 cur[0].execute(
                     f"""UPDATE jobs
