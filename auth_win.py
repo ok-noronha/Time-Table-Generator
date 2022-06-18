@@ -21,6 +21,7 @@ class Hash:
 
 class Authentication:
     def __init__(self):
+        # This is the constructor of the class. It is called when you create an instance of the class.
         self.usrid=0
         self.password=0
         self.db=None
@@ -50,27 +51,18 @@ class Authentication:
         self.root.resizable(False,False)
         self.root.mainloop()
 
-    def on_loginb(self):
-        self.usrid=Hash(self.id_entry.get()).hash_value
-        self.password=Hash(self.password_entry.get()).hash_value
-        self.db = backend.DataBase(self.usrid,self.password)
-        if(self.db.check_id()):
-            if(self.db.check_password()):
-                #db.reset_db()
-                self.root.destroy()
-                main_win.MainWindow(backend.DataBase(self.usrid,self.password),self.usrid)
-            else:
-                messagebox.showerror("Authentication failed", "Password Does not Match.")
-        else:
-            messagebox.showerror("Authentication failed", "User with Entered user ID not Found.")
-
     def on_signupb(self):
+        """
+        It checks if the user id exists in the database, if it doesn't, it creates a new user.
+        """
+        # Checking if the user id exists in the db.
+        #TODO accept more details if necessary
+        #note that the authentication window is useless
         self.usrid=Hash(self.id_entry.get()).hash_value
         self.password=Hash(self.password_entry.get()).hash_value
         self.db = backend.DataBase(self.usrid,self.password)
         if(not self.db.check_id()):
             if(self.validate()):
-                self.db = backend.DataBase(self.usrid,self.password)
                 self.db.create_user()
                 messagebox.showinfo("Account Created"," Try Logging in.")
             else:
@@ -78,13 +70,29 @@ class Authentication:
         else:
             messagebox.showerror("Authentication failed", "User ID already exists.\n Try Logging in.")
 
-    def validate(self):
-        return True
-
-    def on_reset(self):
-        backend.reset_db()
+    def on_loginb(self):
+        # Checking if the user id and password are correct.
+        self.usrid=Hash(self.id_entry.get()).hash_value
+        self.password=Hash(self.password_entry.get()).hash_value
+        self.db = backend.DataBase(self.usrid,self.password)
+        if(self.db.check_id()):
+            if(self.db.check_password()):
+                #db.reset_db()
+                self.root.destroy()
+                main_win.MainWindow(self.db)
+            else:
+                messagebox.showerror("Authentication failed", "Password Does not Match.")
+        else:
+            messagebox.showerror("Authentication failed", "User with Entered user ID not Found.")
 
     def on_forgotb(self):
+        """
+        It takes the user id and password from the entry boxes and then checks if the user id exists in
+        the database. If it does, it updates the password in the database.
+        """
+        #TODO accept more details if necessary
+        #TODO check format of usrid and password to be accepted
+        #TODO any form of authentication
         self.usrid=Hash(self.id_entry.get()).hash_value
         self.password=Hash(self.password_entry.get()).hash_value
         self.db = backend.DataBase(self.usrid,self.password)
@@ -93,3 +101,20 @@ class Authentication:
             messagebox.showinfo("Password Updated", self.password_entry.get()+" \n Try Logging in.")
         else:
             messagebox.showerror("Authentication failed", "User with Entered user ID not Found.")
+
+    def validate(self):
+        """
+        It checks the format of the usrid and password to be accepted.
+        :return: The return value is a boolean value.
+        """
+        #TODO check format of usrid and password to be accepted
+        return True
+
+    def on_reset(self):
+        """
+        It resets the database.
+        """
+        backend.reset_db()
+
+if __name__ == '__main__':
+    Authentication()

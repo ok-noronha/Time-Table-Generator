@@ -1,14 +1,28 @@
 {
-    "python.testing.pytestArgs": [
-        "."
-    ],
-    "python.testing.unittestEnabled": true,
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./sample-tkinter-application-structure-main",
-        "-p",
-        "test_*.py"
-    ]
+  "python.testing.pytestArgs": ["."],
+  "python.testing.unittestEnabled": true,
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    "./sample-tkinter-application-structure-main",
+    "-p",
+    "test_*.py"
+  ],
+  "cSpell.words": [
+    "clss",
+    "forgotb",
+    "ipadx",
+    "ipady",
+    "loginb",
+    "padx",
+    "pady",
+    "pswd",
+    "scrl",
+    "selectmode",
+    "signupb",
+    "treeview",
+    "usrid",
+    "yscrollcommand"
+  ]
 }

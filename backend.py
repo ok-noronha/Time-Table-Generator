@@ -6,10 +6,20 @@ from psycopg2 import OperationalError, errorcodes, errors
 
 class DataBase:
     def __init__(self, usrid, password):
+        """
+        The function __init__() is a constructor that initializes the attributes of the class
+
+        :param usrid: The username of the account you want to log into
+        :param password: The password for the user
+        """
         self.ids = usrid
         self.pswd = password
 
     def connect_db(self):
+        """
+        It connects to the database and returns a connection object
+        :return: A connection object.
+        """
         return psycopg2.connect(
             user="postgres",
             password="1024",
@@ -19,33 +29,60 @@ class DataBase:
         )
 
     def create_cur(self, conn):
+        """
+        It creates a cursor and returns it along with the connection
+
+        :param conn: The connection object
+        :return: A tuple of the cursor and the connection.
+        """
         return (conn.cursor(), conn)
 
-    def add_course(self, code, hours, cur=None):
+    def check_id(self, cur=None):
+        """
+        It checks if the user id exists in the database
+
+        :param cur: The cursor object
+        :return: a boolean value.
+        """
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"INSERT INTO courses VALUES ( '{code}',{hours},{self.ids})")
-            cur[1].commit()
-            return True
+            cur[0].execute(
+                f"SELECT usrid FROM authentication WHERE usrid = {self.ids}"
+            )
+            return cur[0].fetchone() is not None
         except Exception as error:
-            print ("Oops! An exception has occured:", error)
+            print ("Oops! An exception has occurred:", error)
             print ("Exception TYPE:", type(error))
             return False
 
-    def get_courses(self, cur=None):
+    def check_password(self, cur=None):
+        """
+        It takes a user's id and password, and checks if the password is correct
+
+        :param cur: a cursor object
+        :return: The password from the database is being returned.
+        """
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"SELECT * FROM courses WHERE usrid={self.ids};")
-            return cur[0].fetchall()
+            cur[0].execute(
+                f"SELECT password FROM authentication WHERE usrid={self.ids}"
+            )
+            return cur[0].fetchone()[0] == self.pswd
+
         except Exception as error:
-            print ("Oops! An exception has occured:", error)
+            print ("Oops! An exception has occurred:", error)
             print ("Exception TYPE:", type(error))
-            print("course code not found")
-            return None
+            return False
 
     def set_password(self,cur=None):
+        """
+        It updates the password of a user in the database
+
+        :param cur: This is the cursor object that is returned by the create_cur() method
+        :return: A boolean value
+        """
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
@@ -56,23 +93,191 @@ class DataBase:
         except Exception as error:
             print ("Oops! An exception has occured:", error)
             print ("Exception TYPE:", type(error))
-            print("course not deleted")
             print("Password not updated")
             return False
 
 
-    def delete_course(self, code, cur=None):
+    def create_user(self, cur=None):
+        """
+        It deletes the user's data from the database and then inserts the new data
+
+        :param cur: This is the cursor object that is returned by the create_cur() function
+        """
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute(f"DELETE FROM courses_cpy WHERE code='{code}'AND usrid={self.ids};")
-            cur[0].execute(f"DELETE FROM courses WHERE code='{code}'AND usrid={self.ids};")
+            cur[0].execute(f"DELETE FROM authentication WHERE usrid={self.ids};")
+            cur[0].execute(
+                f"INSERT INTO authentication VALUES ({self.ids},{self.pswd});")
             cur[1].commit()
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            print("Could not create User Data")
+
+    def delete_user(self, cur=None):
+        """
+        It deletes a user from the database
+
+        :param cur: The cursor object
+        :return: a boolean value.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            cur[0].execute(
+                f"DELETE FROM authentication WHERE usrid={self.ids}"
+            )
             return True
         except Exception as error:
             print ("Oops! An exception has occured:", error)
             print ("Exception TYPE:", type(error))
+            return False
+
+    def add_course(self, code, hours, cur=None):
+        """
+        It adds a course to the database
+
+        :param code: The course code
+        :param hours: int
+        :param cur: a cursor object
+        :return: A list of tuples.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            cur[0].execute(f"INSERT INTO courses VALUES ( '{code}', {hours} )")
+            cur[1].commit()
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            return False
+
+    def get_course(self, cur=None, code=None, hours=0 ):
+        """
+        This function returns a list of tuples containing the course code, course name, and number of
+        hours for all courses in the database that have a number of hours greater than or equal to the
+        number of hours specified by the user
+
+        :param cur: the cursor object
+        :param code: the course code
+        :param hours: the minimum number of hours for the course, defaults to 0 (optional)
+        :return: A list of tuples.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            if code is None:
+                cur[0].execute(f"SELECT * FROM courses WHERE hours >= {hours} ORDER BY code;")
+            else:
+                cur[0].execute(f"SELECT * FROM courses WHERE code = '{code}' AND hours >= {hours} ORDER BY code;")
+            return cur[0].fetchall()
+        except Exception as error:
+            print ("Oops! An exception has occured:", error)
+            print ("Exception TYPE:", type(error))
+            print("course code not found")
+            return None
+
+    def delete_course(self, code=None, hours=0, cur=None):
+        """
+        It deletes a course from the database
+
+        :param code: the course code
+        :param hours: the number of hours the course takes, defaults to 0 (optional)
+        :param cur: a cursor object
+        :return: A boolean value.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+
+        if code is None:
+            return False
+        try:
+            cur[0].execute(f"UPDATE slots SET code = NULL WHERE code = '{code}';")
+            cur[0].execute(f"DELETE FROM classes WHERE code='{code}';")
+            cur[0].execute(f"DELETE FROM constraints WHERE code='{code}';")
+            cur[0].execute(f"DELETE FROM courses WHERE code='{code}'AND hours={hours};")
+            cur[1].commit()
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
             print("course not deleted")
+            return False
+
+    def add_clss(self, clss, code, cur=None):
+        """
+        It takes a class name and a class code and adds it to the database
+
+        :param clss: The name of the class
+        :param code: The code of the class
+        :param cur: The cursor object
+        :return: A boolean value.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            cur[0].execute(f"INSERT INTO classes VALUES ( '{clss}', '{code}' )")
+            cur[1].commit()
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            return False
+
+    def get_clss(self, clss=None, cur=None, code=None):
+        """
+        This function returns a list of tuples containing the class and code of the class that is passed
+        in as a parameter
+
+        :param cur: The cursor object. If not provided, a new cursor object will be created
+        :param clss: The class you want to get the data from
+        :param code: The code of the class
+        :return: the class and code of the class.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            if clss is None:
+                cur[0].execute(f"SELECT * FROM classes ORDER BY class;")
+            elif code is None:
+                cur[0].execute(f"SELECT * FROM classes WHERE class='{clss}' ORDER BY class;")
+            else:
+                cur[0].execute(f"SELECT * FROM classes WHERE class = '{clss}' AND code = '{code}' ORDER BY class;")
+            return cur[0].fetchall()
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            print("Class not found")
+            return None
+
+    def delete_clss(self, clss=None, code=None, cur=None):
+        """
+        It deletes a class from the database
+
+        :param clss: The class name
+        :param code: The code of the class, defaults to 0 (optional)
+        :param cur: the cursor object
+        :return: A boolean value.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            if code is None:
+                cur[0].execute(f"DELETE FROM slots WHERE class = '{clss}';")
+                cur[0].execute(f"DELETE FROM constraints WHERE class='{clss}';")
+                cur[0].execute(f"DELETE FROM classes WHERE class='{clss}';")
+            else:
+                cur[0].execute(f"UPDATE slots SET code = NULL WHERE class = '{clss}' AND code='{code}';")
+                cur[0].execute(f"DELETE FROM classes WHERE class='{clss}' AND code='{code}';")
+                cur[0].execute(f"DELETE FROM constraints WHERE class='{clss}' AND code='{code}';")
+                cur[1].commit()
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            print("class not deleted")
             return False
 
     def time_table(self, cur=None):
@@ -132,127 +337,40 @@ class DataBase:
             print("Cant extract time table")
             return None
 
-    def create_user(self, cur=None):
-        if cur is None:
-            cur = self.create_cur(self.connect_db())
-        try:
-            cur[0].execute(f"DELETE FROM jobs WHERE usrid={self.ids};")
-            cur[0].execute(f"DELETE FROM courses_cpy WHERE usrid={self.ids};")
-            cur[0].execute(f"DELETE FROM courses WHERE usrid={self.ids};")
-            cur[0].execute(f"DELETE FROM authentication WHERE usrid={self.ids};")
-            cur[0].execute(
-                f"INSERT INTO authentication VALUES ({self.ids},{self.pswd});")
-            cur[0].execute(
-                f"INSERT INTO jobs (hour,usrid) VALUES (11,{self.ids}),(12,{self.ids}),(13,{self.ids}),(14,{self.ids}),(15,{self.ids}),(16,{self.ids}),(17,{self.ids}),(21,{self.ids}),(22,{self.ids}),(23,{self.ids}),(24,{self.ids}),(25,{self.ids}),(26,{self.ids}),(27,{self.ids}),(31,{self.ids}),(32,{self.ids}),(33,{self.ids}),(34,{self.ids}),(35,{self.ids}),(36,{self.ids}),(37,{self.ids}),(41,{self.ids}),(42,{self.ids}),(43,{self.ids}),(44,{self.ids}),(45,{self.ids}),(46,{self.ids}),(47,{self.ids}),(51,{self.ids}),(52,{self.ids}),(53,{self.ids}),(54,{self.ids}),(55,{self.ids}),(56,{self.ids}),(57,{self.ids}),(61,{self.ids}),(62,{self.ids}),(63,{self.ids}),(64,{self.ids});"
-            )
-            cur[1].commit()
-            self.add_course("LUNCH", 5 * 4 * 6)
-            self.add_course("FREE", 0)
-            self.add_course("MEET", 6 * 4)
-        except Exception as error:
-            print ("Oops! An exception has occured:", error)
-            print ("Exception TYPE:", type(error))
-            print("Could not create User Data")
-
-    def check_id(self, cur=None):
-        if cur is None:
-            cur = self.create_cur(self.connect_db())
-        try:
-            cur[0].execute(
-                f"SELECT usrid FROM authentication WHERE usrid = {self.ids}"
-            )
-            return cur[0].fetchone() is not None
-        except Exception as error:
-            print ("Oops! An exception has occured:", error)
-            print ("Exception TYPE:", type(error))
-            return False
-
-    def delete_user(self, cur=None):
-        if cur is None:
-            cur = self.create_cur(self.connect_db())
-        try:
-            cur[0].execute(
-                f"DELETE FROM authentication WHERE usrid={self.ids}"
-            )
-            return True
-        except Exception as error:
-            print ("Oops! An exception has occured:", error)
-            print ("Exception TYPE:", type(error))
-            return False
-
-    def check_password(self, cur=None):
-        if cur is None:
-            cur = self.create_cur(self.connect_db())
-        try:
-            cur[0].execute(
-                f"SELECT password FROM authentication WHERE usrid={self.ids}"
-            )
-            return cur[0].fetchone()[0] == self.pswd
-
-        except Exception as error:
-            print ("Oops! An exception has occured:", error)
-            print ("Exception TYPE:", type(error))
-            return False
-
     def reset_dib(self, cur=None):
+        # A function that resets the database.
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            cur[0].execute("DROP TABLE IF EXISTS jobs CASCADE")
+            cur[0].execute("DROP TABLE IF EXISTS slots CASCADE")
             cur[0].execute("DROP TABLE IF EXISTS courses CASCADE")
-            cur[0].execute("DROP TABLE IF EXISTS courses_cpy CASCADE")
+            cur[0].execute("DROP TABLE IF EXISTS classes CASCADE")
             cur[0].execute("DROP TABLE IF EXISTS authentication CASCADE")
+            cur[0].execute("DROP TABLE IF EXISTS constraints CASCADE")
             cur[0].execute(
                 "CREATE TABLE authentication (usrid NUMERIC(12) NOT NULL PRIMARY KEY, password NUMERIC(12) NOT NULL)"
             )
             cur[0].execute(
-                "CREATE TABLE courses (code VARCHAR(8) NOT NULL , hours INTEGER NOT NULL,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
+                "CREATE TABLE courses (code VARCHAR(8) NOT NULL PRIMARY KEY, hours INTEGER NOT NULL)"
             )
             cur[0].execute(
-                "CREATE TABLE courses_cpy (code VARCHAR(8) NOT NULL , hours INTEGER NOT NULL, usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
+                "CREATE TABLE classes (class VARCHAR(8) NOT NULL, code VARCHAR(8) REFERENCES courses(code), PRIMARY KEY(class,code))"
             )
             cur[0].execute(
-                "CREATE TABLE jobs (hour NUMERIC(2) NOT NULL , code VARCHAR(8) ,usrid NUMERIC(12) NOT NULL REFERENCES authentication(usrid) ON DELETE CASCADE)"
+                "CREATE TABLE slots (slot_no NUMERIC(2) NOT NULL, code VARCHAR(8) REFERENCES courses(code), class VARCHAR(8)  , PRIMARY KEY(class,slot_no))"
             )
             cur[0].execute(
-                """CREATE OR REPLACE FUNCTION byfor()
-            RETURNS trigger as $byfor$
-            declare
-            hrs integer;
-            BEGIN
-            hrs=CEIL(new.hours/24);
-            INSERT INTO courses_cpy VALUES (new.code, hrs, new.usrid);
-            RETURN NEW;
-            END;
-            $byfor$
-            LANGUAGE plpgsql;
-            CREATE OR REPLACE TRIGGER byfor AFTER INSERT ON courses FOR EACH ROW EXECUTE PROCEDURE byfor();"""
-            )
-            cur[0].execute(
-                f"""CREATE OR REPLACE FUNCTION decl()
-            RETURNS trigger as $decl$
-            declare
-            hrs integer;
-            BEGIN
-            SELECT hours into hrs FROM courses_cpy WHERE code=new.code;
-            hrs=hrs-1;
-            UPDATE courses_cpy
-            SET hours = hrs
-            WHERE code = new.code AND usrid = {self.ids};
-            RETURN NEW;
-            END;
-            $decl$
-            LANGUAGE plpgsql;
-            CREATE OR REPLACE TRIGGER decl AFTER UPDATE ON jobs FOR EACH ROW EXECUTE PROCEDURE decl();"""
+                "CREATE TABLE constraints (code VARCHAR(8) REFERENCES courses(code) NOT NULL, slot_no NUMERIC(2) NOT NULL, class VARCHAR(8)   NOT NULL, PRIMARY KEY (code, slot_no, class))"
             )
             cur[1].commit()
-
             return True
         except Exception as error:
-            print ("Oops! An exception has occured:", error)
+            print ("An exception has occured:", error)
             print ("Exception TYPE:", type(error))
             print("The DataBase Couldnt be Reset")
             return False
 
 def reset_db():
     DataBase(0,0).reset_dib()
+
+print(DataBase(0,0).get_course())
