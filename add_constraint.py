@@ -38,7 +38,7 @@ class AddConstraint :
         self.slot_entry.grid(row=1, column=3, padx=5, pady=5)
 
 
-        self.clss_entry_label = Label(self.console, text="clss Required :")
+        self.clss_entry_label = Label(self.console, text="Class :")
         self.clss_entry_label.grid(row=2, column=0, padx=5, pady=5)
 
         self.clss_entry = Entry(self.console, width=20)
@@ -81,7 +81,7 @@ class AddConstraint :
         self.tr_vw["show"] = "headings"
         self.tr_vw.heading(1, text="Course Code")
         self.tr_vw.heading(2, text="Slot No")
-        self.tr_vw.heading(3, text="Hours")
+        self.tr_vw.heading(3, text="Class")
 
         self.scrl.pack(side=RIGHT, fill=Y)
         self.tr_vw.pack(side=LEFT, fill=BOTH, expand=1)
@@ -98,7 +98,7 @@ class AddConstraint :
         """
         self.row = self.db.get_constraint()
         self.tr_vw.delete(*self.tr_vw.get_children())
-        if len(self.row) != 0:
+        if self.row is not None and len(self.row) != 0:
             for i in self.row:
                  self.tr_vw.insert("", "end", values=i)
 
@@ -106,18 +106,30 @@ class AddConstraint :
         code = self.code_entry.get()
         clss = self.clss_entry.get()
         slot = self.slot_entry.get()
-        if code in self,db.:
-            self.warning_label["text"] = "*\tPlease Enter valid the Constraint Code\t*"
-            self.code_entry.delete(8, END)
+        if code not in self.db.get_course(code=code)[0]:
+            print(self.db.get_course(code=code)[0])
+            print(self.db.get_course(code=code))
+            self.warning_label["text"] = "*\tPlease Enter valid Course Code\t*"
+            self.code_entry.delete(0, END)
             return
-        if clss == "" or (self.db.get_clss is None):
-            t="*\tPlease Enter the class Required\t*"
+        if clss != self.db.get_clss(clss=clss)[0][0]:
+            t="*\tPlease Enter valid Class Required\t*"
             self.warning_label["text"] = t
             self.clss_entry.delete(0, END)
+            return
+        if self.db.get_clss(clss=clss,code=code) is None:
+            self.warning_label["text"] = "*\tPlease Enter valid Class-Course Relation\t*"
+            self.code_entry.delete(0, END)
+            self.clss_entry.delete(0, END)
+            return
 
+        if int(slot) not in backend.slotss:
+            self.warning_label["text"] = "*\tPlease Enter valid Slot Code\t*"
+            self.slot_entry.delete(0, END)
+            return
         else:
             self.warning_label["text"] = ""
-            if self.db.add_constraint():
+            if self.db.add_constraint(clss=clss,code=code,slot=slot):
                 self.update_tree()
             else:
                 self.warning_label["text"] = "*\tConstraint Already Exists\t*"
@@ -129,7 +141,7 @@ class AddConstraint :
         self.curr_row = self.tr_vw.focus()
         self.contents = self.tr_vw.item(self.curr_row)
         self.info = self.contents["values"]
-        #self.db.delete_Constraint(code=self.info[0], clss=self.info[1])
+        self.db.delete_constraint(code=self.info[0], clss=self.info[2], slot=int(self.info[1]))
         self.update_tree()
 
     def on_closing(self):

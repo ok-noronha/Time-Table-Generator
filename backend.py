@@ -3,7 +3,7 @@ import sys
 from psycopg2 import connect
 from psycopg2 import OperationalError, errorcodes, errors
 
-
+slotss=[11,12,13,14,15,16,17,21,22,23,24,25,26,27,31,32,33,34,35,36,37,41,42,43,44,45,46,47,51,52,53,54]
 class DataBase:
     def __init__(self, usrid, password):
         """
@@ -23,7 +23,7 @@ class DataBase:
         """
         return psycopg2.connect(
             user="postgres",
-            password="snishti",
+            password="1024",
             host="localhost",
             port="5432",
             database="ttdb",
@@ -96,7 +96,6 @@ class DataBase:
             print ("Exception TYPE:", type(error))
             print("Password not updated")
             return False
-
 
     def create_user(self, cur=None):
         """
@@ -253,14 +252,6 @@ class DataBase:
             print("Class not found")
             return None
 
-    def add_constraint(self):
-        #TODO: ..
-        print("bc.call_add_constraint")
-
-    def get_constraint(self):
-        #TODO: ..
-        print("bc.call_get_constraint")    
-   
     def delete_clss(self, clss=None, code=None, cur=None):
         """
         It deletes a class from the database
@@ -289,7 +280,86 @@ class DataBase:
             print("class not deleted")
             return False
 
+    def add_constraint(self, clss=None, code=None, slot=None, cur=None):
+        """
+        It takes in a class, a code, a slot, and a cursor, and inserts the class, code, and slot into
+        the constraints table
+
+        :param clss: The class code
+        :param code: the code of the constraint
+        :param slot: the slot number
+        :param cur: a cursor object
+        :return: A boolean value.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            cur[0].execute(f"INSERT INTO constraints VALUES ( '{code}', {slot}, '{clss}' )")
+            cur[1].commit()
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            return False
+
+    def get_constraint(self, cur=None, code=None, clss=None, slot=None):
+        """
+        This function returns all the constraints in the database
+
+        :param cur: the cursor object
+        :param code: the code of the class
+        :param clss: The class name
+        :param slot: the slot name
+        :return: A list of tuples.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+        try:
+            if clss is None and code is None and slot is None:
+                cur[0].execute(f"SELECT * FROM constraints ORDER BY class;")
+            elif code is None and slot is None:
+                cur[0].execute(f"SELECT * FROM constraints WHERE class = '{clss}';")
+            else:
+                pass
+                #cur[0].execute(f"SELECT * FROM classes WHERE class = '{clss}' AND code = '{code}' ORDER BY class;")
+            return cur[0].fetchall()
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            print("Class not found")
+            return None
+
+    def delete_constraint(self, cur=None, code=None, clss=None, slot=None):
+        """
+        It deletes a constraint from the database
+
+        :param code: The code of the course
+        :param clss: The class for which the constraint is being added
+        :param slot: The slot number of the constraint
+        :return: a boolean value.
+        """
+        if cur is None:
+            cur = self.create_cur(self.connect_db())
+
+        if code is None:
+            return False
+        try:
+            cur[0].execute(f"DELETE FROM constraints WHERE code='{code}'AND class='{clss}' AND slot_no={slot};")
+            cur[1].commit()
+            return True
+        except Exception as error:
+            print ("Oops! An exception has occurred:", error)
+            print ("Exception TYPE:", type(error))
+            print("course not deleted")
+            return False
+
     def reset_dib(self, cur=None):
+        """
+        It resets the database
+
+        :param cur: A cursor object
+        :return: a boolean value.
+        """
         # A function that resets the database.
         if cur is None:
             cur = self.create_cur(self.connect_db())
@@ -317,9 +387,9 @@ class DataBase:
             cur[1].commit()
             return True
         except Exception as error:
-            print ("An exception has occured:", error)
+            print ("An exception has occurred:", error)
             print ("Exception TYPE:", type(error))
-            print("The DataBase Couldnt be Reset")
+            print("The DataBase couldn't be Reset")
             return False
 
 def reset_db():
