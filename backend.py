@@ -226,7 +226,7 @@ class DataBase:
             print ("Exception TYPE:", type(error))
             return False
 
-    def get_clss(self, clss=None, cur=None, code=None):
+    def get_clss(self, clss=None, cur=None, code=None, dist=False):
         """
         This function returns a list of tuples containing the class and code of the class that is passed
         in as a parameter
@@ -239,7 +239,9 @@ class DataBase:
         if cur is None:
             cur = self.create_cur(self.connect_db())
         try:
-            if clss is None:
+            if dist:
+                cur[0].execute(f"SELECT DISTINCT class FROM classes;")
+            elif clss is None:
                 cur[0].execute(f"SELECT * FROM classes ORDER BY class;")
             elif code is None:
                 cur[0].execute(f"SELECT * FROM classes WHERE class='{clss}' ORDER BY class;")
@@ -382,7 +384,7 @@ class DataBase:
                 "CREATE TABLE slots (slot_no NUMERIC(2) NOT NULL, code VARCHAR(8) REFERENCES courses(code), class VARCHAR(8)  , PRIMARY KEY(class,slot_no))"
             )
             cur[0].execute(
-                "CREATE TABLE constraints (code VARCHAR(8) REFERENCES courses(code) NOT NULL, slot_no NUMERIC(2) NOT NULL, class VARCHAR(8)   NOT NULL, PRIMARY KEY (code, slot_no, class))"
+                "CREATE TABLE constraints (code VARCHAR(8) REFERENCES courses(code) NOT NULL, slot_no NUMERIC(2) NOT NULL, class VARCHAR(8)   NOT NULL, PRIMARY KEY (slot_no, class))"
             )
             cur[1].commit()
             return True
@@ -392,5 +394,41 @@ class DataBase:
             print("The DataBase couldn't be Reset")
             return False
 
+    def gen_tt(self):
+
+        #
+        global base_slots
+        base_slots = []
+        global base_clsses
+        base_clsses = {}
+        global base_courses
+        base_courses = []
+
+        for slot in slotss:
+            base_slots.append((slot,'X'))
+
+        for clss in self.get_clss(dist=True):
+            base_clsses[clss[0]]=base_slots
+
+        # Adding a course called 'FREE' and 'LUNCH' to the timetable.
+        self.add_course(code='FREE', hours=0)
+        self.add_course(code='LUNCH', hours=5*4*6)
+        for clss in self.get_clss(dist=True):
+            self.add_clss(clss=clss[0], code='FREE')
+            self.add_clss(clss=clss[0], code='LUNCH')
+            for i in range(1,5):
+                self.add_constraint(clss=clss[0],code='LUNCH',slot=i*10+5)
+
+        for course in self.get_course():
+            c=(course[0],course[1]//24)
+            base_courses.append(c)
+
+
+        print(base_courses)
+
+
+
 def reset_db():
     DataBase(0,0).reset_dib()
+
+DataBase(0,0).gen_tt()

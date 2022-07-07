@@ -7,6 +7,7 @@ import add_class
 import add_course
 import add_constraint
 
+# It creates a window with buttons that call other windows.
 class MainWindow():
     def __init__(self, db):
         self.root = Tk()
@@ -43,7 +44,6 @@ class MainWindow():
     def on_add_constraint(self):
         self.root.destroy()
         add_constraint.AddConstraint(self.db)
-        
 
     def on_add_class(self):
         self.root.destroy()
