@@ -5,6 +5,7 @@ import backend
 import auth_win
 import add_class
 import add_course
+import add_constraint
 
 class MainWindow():
     def __init__(self, db):
@@ -40,7 +41,9 @@ class MainWindow():
         add_course.AddCourse(self.db)
 
     def on_add_constraint(self):
-        print("add constraint")
+        self.root.destroy()
+        add_constraint.AddConstraint(self.db)
+        
 
     def on_add_class(self):
         self.root.destroy()

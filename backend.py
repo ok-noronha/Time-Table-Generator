@@ -19,10 +19,11 @@ class DataBase:
         """
         It connects to the database and returns a connection object
         :return: A connection object.
+
         """
         return psycopg2.connect(
             user="postgres",
-            password="1024",
+            password="snishti",
             host="localhost",
             port="5432",
             database="ttdb",
@@ -252,6 +253,14 @@ class DataBase:
             print("Class not found")
             return None
 
+    def add_constraint(self):
+        #TODO: ..
+        print("bc.call_add_constraint")
+
+    def get_constraint(self):
+        #TODO: ..
+        print("bc.call_get_constraint")    
+   
     def delete_clss(self, clss=None, code=None, cur=None):
         """
         It deletes a class from the database
@@ -279,63 +288,6 @@ class DataBase:
             print ("Exception TYPE:", type(error))
             print("class not deleted")
             return False
-
-    def time_table(self, cur=None):
-        if cur is None:
-            cur = self.create_cur(self.connect_db())
-        try:
-            cur[0].execute(
-                """UPDATE jobs
-            SET code = 'LUNCH'
-            WHERE hour=15 OR hour=25 OR hour=35 OR hour=45 OR hour=55"""
-            )
-            cur[1].commit()
-            cur[0].execute(f"SELECT hour FROM jobs WHERE code IS NULL AND usrid={self.ids};")
-            jobs=cur[0].fetchall()
-            for job in jobs:
-                cod=None
-                if (job[0]%10 == 1):
-                    try:
-                        cur[0].execute(f"SELECT code, hours FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') AND hours>0 ORDER BY random() LIMIT 1")
-                        cod = cur[0].fetchone()[0]
-                        if cod is None:
-                            raise Exception("No Mandatory Courses")
-                    except Exception as e:
-                        cur[0].execute(f"SELECT code, hours  FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH','MEET','FREE') ORDER BY random() LIMIT 1")
-                        cod = cur[0].fetchone()[0]
-                else :
-                    try:
-                        cur[0].execute(f"SELECT code, hours  FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH') AND hours>0 ORDER BY random() LIMIT 1")
-                        cod = cur[0].fetchone()[0]
-                        if cod is None:
-                            raise Exception("No Mandatory Courses")
-                    except Exception as e:
-                        cur[0].execute(f"SELECT code, hours FROM courses_cpy WHERE usrid={self.ids} AND code NOT IN ('LUNCH') ORDER BY random() LIMIT 1")
-                        cod = cur[0].fetchone()[0]
-                cur[0].execute(
-                    f"""UPDATE jobs
-                SET code = '{cod}'
-                WHERE hour={job[0]}"""
-                )
-                cur[1].commit()
-            return True
-        except Exception as error:
-            print ("Oops! An exception has occured:", error)
-            print ("Exception TYPE:", type(error))
-            print("The time-table is not computed")
-            return False
-
-    def get_jobs(self, cur=None):
-        if cur is None:
-            cur = self.create_cur(self.connect_db())
-        try:
-            cur[0].execute(f"SELECT * FROM jobs WHERE usrid={self.ids};")
-            return cur[0].fetchall()
-        except Exception as error:
-            print ("Oops! An exception has occured:", error)
-            print ("Exception TYPE:", type(error))
-            print("Cant extract time table")
-            return None
 
     def reset_dib(self, cur=None):
         # A function that resets the database.
@@ -372,5 +324,3 @@ class DataBase:
 
 def reset_db():
     DataBase(0,0).reset_dib()
-
-print(DataBase(0,0).get_course())
